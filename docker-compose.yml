@@ -16,9 +16,9 @@ services:
         container_name: logistirio_mysql
         restart: unless-stopped
         environment:
-            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
             MYSQL_ROOT_HOST: "%"
-            MYSQL_DATABASE: 'logistirio_database'
+            MYSQL_DATABASE: '${DB_DATABASE}'
             MYSQL_USER: '${DB_USER}'
             MYSQL_PASSWORD: '${DB_PASSWORD}'
         volumes:
@@ -32,7 +32,7 @@ services:
     logistirio_app:
         build:
             context: ./application
-            dockerfile: ./docker/local/Dockerfile
+            dockerfile: application/_docker/local/Dockerfile
             args:
                 UID: ${UID:-1000}
         container_name: logistirio_app

@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ARG UID=1000
 ARG NODE_VERSION=16
-ARG PHP_VERSION="8.3"
+ARG PHP_VERSION="8.4"
 
 WORKDIR /application
 
@@ -79,9 +79,6 @@ RUN apt-get update \
     && apt-get install aptitude -y \
     && aptitude install ldap-utils -y \
     && apt-get install php-ldap -y
-
-RUN pecl install sqlsrv-5.11.1
-RUN pecl install pdo_sqlsrv-5.11.1
 
 COPY docker/local/crontab /etc/cron.d/laravel-cron
 RUN chmod 0644 /etc/cron.d/laravel-cron
