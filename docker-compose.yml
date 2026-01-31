@@ -32,7 +32,7 @@ services:
     logistirio_app:
         build:
             context: ./application
-            dockerfile: application/_docker/local/Dockerfile
+            dockerfile: docker/local/Dockerfile
             args:
                 UID: ${UID:-1000}
         container_name: logistirio_app
