@@ -1,43 +1,42 @@
 <?php
 
-namespace App\Filament\Resources\Images\Pages;
+namespace App\Filament\Resources\Files\Pages;
 
-use App\Filament\Resources\Images\ImageResource;
-use App\Models\Image;
+use App\Filament\Resources\Files\FileResource;
+use App\Models\File;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Pages\ManageRecords;
 use Illuminate\Support\Facades\Storage;
 
-class ManageImages extends ManageRecords
+class ManageFiles extends ManageRecords
 {
-    protected static string $resource = ImageResource::class;
+    protected static string $resource = FileResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
             Action::make('uploadImages')
-                ->label('Upload Images')
+                ->label('Upload Files')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->schema([
-                    FileUpload::make('images')
+                    FileUpload::make('files')
                         ->multiple()
                         ->directory('uploads')
-                        ->disk('public')
                         ->required(),
                 ])
                 ->action(function (array $data) {
-                    foreach ($data['images'] as $imagePath) {
-                        Image::create([
+                    foreach ($data['files'] as $imagePath) {
+                        File::create([
                             'filename' => basename($imagePath),
                             'path' => $imagePath,
-                            'mime_type' => Storage::disk('public')->mimeType($imagePath),
-                            'size' => Storage::disk('public')->size($imagePath),
+                            'mime_type' => Storage::mimeType($imagePath),
+                            'size' => Storage::size($imagePath),
                         ]);
                     }
                 })
-                ->successNotificationTitle('Images uploaded successfully'),
+                ->successNotificationTitle('Files uploaded successfully'),
             CreateAction::make(),
         ];
     }

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\Images;
+namespace App\Filament\Resources\Files;
 
-use App\Filament\Resources\Images\Pages\ManageImages;
-use App\Models\Image;
+use App\Filament\Resources\Files\Pages\ManageFiles;
+use App\Models\File;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -15,9 +15,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class ImageResource extends Resource
+class FileResource extends Resource
 {
-    protected static ?string $model = Image::class;
+    protected static ?string $model = File::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
@@ -65,7 +65,7 @@ class ImageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageImages::route('/'),
+            'index' => ManageFiles::route('/'),
         ];
     }
 }
