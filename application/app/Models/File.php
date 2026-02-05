@@ -12,6 +12,7 @@ class File extends Model
         'path',
         'mime_type',
         'size',
+        'hash',
     ];
 
     public function aiRequests()

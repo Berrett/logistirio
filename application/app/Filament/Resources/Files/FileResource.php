@@ -43,6 +43,8 @@ class FileResource extends Resource
                 TextColumn::make('size')
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('hash')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
