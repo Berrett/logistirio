@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\AiRequest;
 use App\Models\File;
 use Exception;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class OpenAiService
@@ -21,7 +22,6 @@ class OpenAiService
     /**
      * Analyze an File model.
      *
-     * @param File $image
      * @return array|null
      */
     public function analyzeImage(File $image): ?AiRequest
@@ -37,7 +37,7 @@ class OpenAiService
         $path = Storage::disk('public')->path($image->path);
         $result = $this->analyzeReceipt($path, $prompt);
         if ($result) {
-            $response = json_decode(str_replace(['\n','\\', '"{', '}"'], ['','', '{', '}'], $result['response']), true);
+            $response = json_decode(str_replace(['\n', '\\', '"{', '}"'], ['', '', '{', '}'], $result['response']), true);
             $aiRequest->update([
                 'response' => $response,
                 'response_status' => ($result['response_code'] ?? 0) == 200 ? 'completed' : 'failed',
@@ -54,12 +54,10 @@ class OpenAiService
 
     /**
      * Get the default prompt for receipt analysis.
-     *
-     * @return string
      */
     protected function getReceiptPrompt(): string
     {
-        return "Extract the following details from this receipt:
+        return 'Extract the following details from this receipt:
 1. Receipt number (receipt_number)
 2. Date (date)
 3. Total amount (total_amount)
@@ -68,14 +66,14 @@ class OpenAiService
    - Tax number/amount - the tax percentage without the symbol percentage (tax_number)
    - Gross price amount with vat (gross_price)
 
-Return the data as a JSON object with these exact keys and information.";
+Return the data as a JSON object with these exact keys and information.';
     }
 
     /**
      * Analyze a receipt file and extract details.
      *
-     * @param string $imagePath Path to the file file
-     * @param string|null $prompt Optional prompt to use
+     * @param  string  $imagePath  Path to the file file
+     * @param  string|null  $prompt  Optional prompt to use
      * @return array|null Extracted data or null on failure
      */
     public function analyzeReceipt(string $imagePath, ?string $prompt = null): ?array
@@ -84,11 +82,13 @@ Return the data as a JSON object with these exact keys and information.";
 
         if (empty($this->apiKey)) {
             logger('OpenAI API key is not set in services.php config.');
+
             return null;
         }
 
-        if (!file_exists($imagePath)) {
+        if (! file_exists($imagePath)) {
             logger("Receipt file file not found at: {$imagePath}");
+
             return null;
         }
 
@@ -103,7 +103,7 @@ Return the data as a JSON object with these exact keys and information.";
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'You are a helpful assistant that extracts data from receipt files into structured JSON format.'
+                            'content' => 'You are a helpful assistant that extracts data from receipt files into structured JSON format.',
                         ],
                         [
                             'role' => 'user',

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use App\Models\AiRequest;
@@ -9,7 +11,8 @@ use Carbon\Carbon;
 
 class CreateAnalysisAction
 {
-    public static function execute(File $file, AiRequest $aiRequest){
+    public static function execute(File $file, AiRequest $aiRequest)
+    {
 
         $response = $aiRequest->response;
         $totalAmount = data_get($response, 'total_amount', 0);
@@ -20,11 +23,11 @@ class CreateAnalysisAction
             $grossPrice = data_get($product, 'gross_price', 0);
             $taxAmount = $grossPrice * ($tax / 100);
 
-            if($netPrice === $grossPrice){
+            if ($netPrice === $grossPrice) {
                 $netPrice = $netPrice - $taxAmount;
             }
 
-            $analysis = new Analysis();
+            $analysis = new Analysis;
             $analysis->fill([
                 'file_id' => $file->id,
                 'ai_request_id' => $aiRequest->id,

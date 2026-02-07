@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\AiRequests;
 
 use App\Filament\Resources\AiRequests\Pages\ManageAiRequests;

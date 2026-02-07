@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\Files;
 
 use App\Actions\CreateAnalysisAction;
@@ -84,7 +86,7 @@ class FileResource extends Resource
                 Action::make('analyze')
                     ->label('Analyze')
                     ->icon('heroicon-o-cpu-chip')
-                    ->visible(fn(File $record): bool => $record->aiRequests()->doesntExist())
+                    ->visible(fn (File $record): bool => $record->aiRequests()->doesntExist())
                     ->action(function (File $record, OpenAiService $service) {
                         $aiRequest = $service->analyzeImage($record);
 

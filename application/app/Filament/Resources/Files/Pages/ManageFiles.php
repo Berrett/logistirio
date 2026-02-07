@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\Files\Pages;
 
 use App\Filament\Resources\Files\FileResource;
@@ -7,8 +9,8 @@ use App\Models\File;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Resources\Pages\ManageRecords;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ManageRecords;
 use Illuminate\Support\Facades\Storage;
 
 class ManageFiles extends ManageRecords
@@ -37,6 +39,7 @@ class ManageFiles extends ManageRecords
                         if (File::where('hash', $hash)->exists()) {
                             Storage::disk('public')->delete($imagePath);
                             $skippedCount++;
+
                             continue;
                         }
 

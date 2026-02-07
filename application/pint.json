@@ -1,0 +1,8 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "no_useless_return": true,
+        "return_assignment": true,
+        "declare_strict_types": true
+    }
+}
