@@ -24,16 +24,18 @@ class ManageFiles extends ManageRecords
                 ->schema([
                     FileUpload::make('files')
                         ->multiple()
+                        ->previewable()
+                        ->disk('public')
                         ->directory('uploads')
                         ->required(),
                 ])
                 ->action(function (array $data) {
                     $skippedCount = 0;
                     foreach ($data['files'] as $imagePath) {
-                        $hash = md5(Storage::get($imagePath));
+                        $hash = md5(Storage::disk('public')->get($imagePath));
 
                         if (File::where('hash', $hash)->exists()) {
-                            Storage::delete($imagePath);
+                            Storage::disk('public')->delete($imagePath);
                             $skippedCount++;
                             continue;
                         }
@@ -41,8 +43,8 @@ class ManageFiles extends ManageRecords
                         File::create([
                             'filename' => basename($imagePath),
                             'path' => $imagePath,
-                            'mime_type' => Storage::mimeType($imagePath),
-                            'size' => Storage::size($imagePath),
+                            'mime_type' => Storage::disk('public')->mimeType($imagePath),
+                            'size' => Storage::disk('public')->size($imagePath),
                             'hash' => $hash,
                         ]);
                     }

@@ -224,4 +224,30 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - Do NOT delete tests without approval.
 - CRITICAL: ALWAYS use `search-docs` tool for version-specific Pest documentation and updated code examples.
 - IMPORTANT: Activate `pest-testing` every time you're working with a Pest or testing-related task.
+
+=== docker rules ===
+
+# Docker Usage
+
+- All Laravel commands (Artisan and Composer) must be executed inside the Docker application container.
+- The application container name is `logistirio_app`.
+- Do not run `php artisan` or `composer` directly on the host machine.
+
+## Examples
+
+<code-snippet name="Artisan commands" lang="bash">
+docker exec -it logistirio_app php artisan migrate
+docker exec -it logistirio_app php artisan storage:link
+docker exec -it logistirio_app php artisan queue:work
+</code-snippet>
+
+<code-snippet name="Composer commands" lang="bash">
+docker exec -it logistirio_app composer install
+</code-snippet>
+
+If you prefer the Docker Compose v2 syntax, you may also use:
+
+<code-snippet name="Docker Compose v2" lang="bash">
+docker compose exec logistirio_app php artisan migrate
+</code-snippet>
 </laravel-boost-guidelines>

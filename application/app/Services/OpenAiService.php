@@ -24,7 +24,7 @@ class OpenAiService
      * @param File $image
      * @return array|null
      */
-    public function analyzeImage(File $image): ?array
+    public function analyzeImage(File $image): ?AiRequest
     {
         $prompt = $this->getReceiptPrompt();
 
@@ -34,11 +34,22 @@ class OpenAiService
             'response_status' => 'pending',
         ]);
 
-        $path = Storage::disk('local')->path($image->path);
+        $path = Storage::disk('public')->path($image->path);
         $result = $this->analyzeReceipt($path, $prompt);
+        if ($result) {
+            $response = json_decode(str_replace(['\n','\\', '"{', '}"'], ['','', '{', '}'], $result['response']), true);
+            $aiRequest->update([
+                'response' => $response,
+                'response_status' => ($result['response_code'] ?? 0) == 200 ? 'completed' : 'failed',
+            ]);
+        } else {
+            $aiRequest->update([
+                'response_status' => 'failed',
+                'response' => 'Analysis failed: Service returned no result.',
+            ]);
+        }
 
-        $aiRequest->update($result);
-        return $result;
+        return $aiRequest;
     }
 
     /**
@@ -51,12 +62,13 @@ class OpenAiService
         return "Extract the following details from this receipt:
 1. Receipt number (receipt_number)
 2. Date (date)
-3. For each product/item (products):
-   - Net price (net_price)
-   - Tax number/amount (tax_number)
-   - Gross price (gross_price)
+3. Total amount (total_amount)
+4. For each product/item (products):
+   - Net price - amount without vat (net_price)
+   - Tax number/amount - the tax percentage without the symbol percentage (tax_number)
+   - Gross price amount with vat (gross_price)
 
-Return the data as a JSON object with these exact keys.";
+Return the data as a JSON object with these exact keys and information.";
     }
 
     /**
@@ -112,9 +124,10 @@ Return the data as a JSON object with these exact keys.";
                     'response_format' => ['type' => 'json_object'],
                 ]);
 
-            $content = $response->json();
             if ($response->successful()) {
-                $content = $content['choices'][0]['message']['content'] ?? '{}';
+                $content = $response->json()['choices'][0]['message']['content'] ?? '{}';
+            } else {
+                $content = $response->body();
             }
 
             return [

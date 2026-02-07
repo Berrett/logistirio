@@ -14,6 +14,10 @@ class AiRequest extends Model
         'response',
     ];
 
+    protected $casts = [
+        'response' => 'array',
+    ];
+
     /**
      * Get the file associated with the AI request.
      */

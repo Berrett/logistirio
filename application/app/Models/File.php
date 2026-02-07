@@ -3,20 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Storage;
 
 class File extends Model
 {
-    protected $fillable = [
-        'filename',
-        'path',
-        'mime_type',
-        'size',
-        'hash',
-    ];
+    protected $guarded = ['id'];
 
     public function aiRequests()
     {
         return $this->hasMany(AiRequest::class, 'file_id');
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return Storage::disk('public')->url($this->path);
     }
 }
