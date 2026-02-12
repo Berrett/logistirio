@@ -19,13 +19,9 @@ class CreateAnalysisAction
         foreach ($response['products'] as $product) {
             $tax = data_get($product, 'tax_number', 0);
             $tax = intval(str_replace('%', '', $tax));
-            $netPrice = data_get($product, 'net_price', 0);
-            $grossPrice = data_get($product, 'gross_price', 0);
-            $taxAmount = $grossPrice * ($tax / 100);
-
-            if ($netPrice === $grossPrice) {
-                $netPrice = $netPrice - $taxAmount;
-            }
+            $grossPrice = floatval(str_replace(',', '.', data_get($product, 'gross_price', 0)));
+            $taxAmount = $grossPrice - ($grossPrice / (($tax + 100) / 100));
+            $netPrice = $grossPrice - $taxAmount;
 
             $analysis = new Analysis;
             $analysis->fill([

@@ -86,7 +86,7 @@ class FileResource extends Resource
                 Action::make('analyze')
                     ->label('Analyze')
                     ->icon('heroicon-o-cpu-chip')
-                    ->visible(fn (File $record): bool => $record->aiRequests()->doesntExist())
+                    ->visible(fn (File $record): bool => $record->aiRequests()->where('response_status', 'completed')->doesntExist())
                     ->action(function (File $record, OpenAiService $service) {
                         $aiRequest = $service->analyzeImage($record);
 
@@ -102,7 +102,7 @@ class FileResource extends Resource
                             Notification::make()
                                 ->danger()
                                 ->title('Analysis failed')
-                                ->body($aiRequest->response ?? 'An error occurred during analysis.')
+                                ->body('An error occurred during analysis.')
                                 ->send();
                         }
                     }),

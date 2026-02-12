@@ -24,17 +24,17 @@ class OpenAiService
      *
      * @return array|null
      */
-    public function analyzeImage(File $image): ?AiRequest
+    public function analyzeImage(File $file): ?AiRequest
     {
         $prompt = $this->getReceiptPrompt();
 
         $aiRequest = AiRequest::create([
             'prompt' => $prompt,
-            'file_id' => $image->id,
+            'file_id' => $file->id,
             'response_status' => 'pending',
         ]);
 
-        $path = Storage::disk('public')->path($image->path);
+        $path = Storage::disk('public')->path($file->path);
         $result = $this->analyzeReceipt($path, $prompt);
         if ($result) {
             $response = json_decode(str_replace(['\n', '\\', '"{', '}"'], ['', '', '{', '}'], $result['response']), true);
@@ -59,12 +59,11 @@ class OpenAiService
     {
         return 'Extract the following details from this receipt:
 1. Receipt number (receipt_number)
-2. Date (date)
+2. Date (date in format d/m/Y)
 3. Total amount (total_amount)
-4. For each product/item (products):
-   - Net price - amount without vat (net_price)
+4. For each product/item/service/participation etc (products):
    - Tax number/amount - the tax percentage without the symbol percentage (tax_number)
-   - Gross price amount with vat (gross_price)
+   - Gross price amount with vat (gross_price - total of each product)
 
 Return the data as a JSON object with these exact keys and information.';
     }
@@ -72,11 +71,11 @@ Return the data as a JSON object with these exact keys and information.';
     /**
      * Analyze a receipt file and extract details.
      *
-     * @param  string  $imagePath  Path to the file file
+     * @param  string  $filePath  Path to the file file
      * @param  string|null  $prompt  Optional prompt to use
      * @return array|null Extracted data or null on failure
      */
-    public function analyzeReceipt(string $imagePath, ?string $prompt = null): ?array
+    public function analyzeReceipt(string $filePath, ?string $prompt = null): ?array
     {
         $prompt = $prompt ?? $this->getReceiptPrompt();
 
@@ -86,16 +85,15 @@ Return the data as a JSON object with these exact keys and information.';
             return null;
         }
 
-        if (! file_exists($imagePath)) {
-            logger("Receipt file file not found at: {$imagePath}");
+        if (! file_exists($filePath)) {
+            logger("Receipt file file not found at: {$filePath}");
 
             return null;
         }
+        $fileData = base64_encode(file_get_contents($filePath));
+        $mimeType = mime_content_type($filePath);
 
         try {
-            $imageData = base64_encode(file_get_contents($imagePath));
-            $mimeType = mime_content_type($imagePath);
-
             $response = Http::withToken($this->apiKey)
                 ->timeout(60)
                 ->post('https://api.openai.com/v1/chat/completions', [
@@ -115,7 +113,7 @@ Return the data as a JSON object with these exact keys and information.';
                                 [
                                     'type' => 'image_url',
                                     'image_url' => [
-                                        'url' => "data:{$mimeType};base64,{$imageData}",
+                                        'url' => "data:{$mimeType};base64,{$fileData}",
                                     ],
                                 ],
                             ],
@@ -137,7 +135,7 @@ Return the data as a JSON object with these exact keys and information.';
 
         } catch (Exception $e) {
             return [
-                'response_code' => 500,
+                'response_code' => 422,
                 'response' => $e->getMessage(),
             ];
         }

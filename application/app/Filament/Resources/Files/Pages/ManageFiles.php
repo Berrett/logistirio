@@ -29,6 +29,7 @@ class ManageFiles extends ManageRecords
                         ->previewable()
                         ->disk('public')
                         ->directory('uploads')
+                        ->acceptedFileTypes(['image/*'])
                         ->required(),
                 ])
                 ->action(function (array $data) {
