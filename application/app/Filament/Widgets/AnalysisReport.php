@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Exports\AnalysisExporter;
 use App\Models\Analysis;
+use Filament\Actions\Action;
 use Filament\Tables;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Writer\XLSX\Writer;
 
 class AnalysisReport extends BaseWidget
 {
@@ -71,12 +75,50 @@ class AnalysisReport extends BaseWidget
                     ->label('ΦΠΑ 24%')
                     ->money('EUR')
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('')->money('EUR')),
+                Tables\Columns\TextColumn::make('total_net_price')
+                    ->label('Σύνολο Καθ. Αξίας')
+                    ->money('EUR')
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('')->money('EUR')),
+                Tables\Columns\TextColumn::make('tax_amount_price')
+                    ->label('Σύνολο ΦΠΑ')
+                    ->money('EUR')
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('')->money('EUR')),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('ΣΥΝΟΛΟ')
                     ->money('EUR')
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('')->money('EUR')),
             ])
             ->paginated(false)
+            ->headerActions([
+                Action::make('export')
+                    ->label('Εξαγωγή σε Excel')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->action(function () {
+                        $records = $this->getFilteredSortedTableQuery()->get();
+
+                        return response()->streamDownload(function () use ($records) {
+                            $writer = new Writer;
+                            $writer->openToFile('php://output');
+
+                            $columns = AnalysisExporter::getColumns();
+
+                            $writer->addRow(Row::fromValues(array_map(
+                                fn ($column) => $column->getLabel(),
+                                $columns,
+                            )));
+
+                            foreach ($records as $record) {
+                                $writer->addRow(Row::fromValues(array_map(
+                                    fn ($column) => $record->{$column->getName()},
+                                    $columns,
+                                )));
+                            }
+
+                            $writer->close();
+                        }, 'analysis-report-'.now()->format('Y-m-d').'.xlsx');
+                    }),
+            ])
             ->filters([
                 Tables\Filters\SelectFilter::make('month')
                     ->label('Μήνας')
