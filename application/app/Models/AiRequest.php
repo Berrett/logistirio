@@ -26,4 +26,12 @@ class AiRequest extends Model
     {
         return $this->belongsTo(File::class);
     }
+
+    /**
+     * Get the analyses associated with the AI request.
+     */
+    public function analyses()
+    {
+        return $this->hasMany(Analysis::class);
+    }
 }

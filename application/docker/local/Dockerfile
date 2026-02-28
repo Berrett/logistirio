@@ -76,6 +76,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN apt-get update \
+    && apt-get install -y poppler-utils \
     && apt-get install aptitude -y \
     && aptitude install ldap-utils -y \
     && apt-get install php-ldap -y

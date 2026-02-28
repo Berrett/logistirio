@@ -86,13 +86,13 @@ class FileResource extends Resource
                 Action::make('analyze')
                     ->label('Analyze')
                     ->icon('heroicon-o-cpu-chip')
-                    ->visible(fn (File $record): bool => $record->aiRequests()->where('response_status', 'completed')->doesntExist())
+                    ->visible(fn (File $record): bool => $record->analyses()->doesntExist())
                     ->action(function (File $record, OpenAiService $service) {
                         $aiRequest = $service->analyzeImage($record);
 
                         CreateAnalysisAction::execute($record, $aiRequest);
 
-                        if ($aiRequest && ($aiRequest->response_code ?? 0) == 200) {
+                        if ($aiRequest->response_status == 'completed') {
                             Notification::make()
                                 ->success()
                                 ->title('Analysis completed')

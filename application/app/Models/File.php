@@ -16,6 +16,11 @@ class File extends Model
         return $this->hasMany(AiRequest::class, 'file_id');
     }
 
+    public function analyses()
+    {
+        return $this->hasMany(Analysis::class);
+    }
+
     public function getUrlAttribute(): string
     {
         return Storage::disk('public')->url($this->path);
