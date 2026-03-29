@@ -21,8 +21,8 @@ class CreateAnalysisAction
             $tax = intval(str_replace('%', '', $tax));
             $grossPrice = (string) data_get($product, 'gross_price', 0);
             $grossPrice = floatval(str_replace(',', '.', $grossPrice));
-            $taxAmount = $grossPrice - ($grossPrice / (($tax + 100) / 100));
-            $netPrice = $grossPrice - $taxAmount;
+            $netPrice = $grossPrice / (($tax + 100) / 100);
+            $taxAmount = $grossPrice - $netPrice;
 
             $analysis = new Analysis;
             $analysis->fill([

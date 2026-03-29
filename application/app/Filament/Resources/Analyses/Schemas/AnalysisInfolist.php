@@ -22,6 +22,8 @@ class AnalysisInfolist
                     ->dateTime(),
                 TextEntry::make('tax')
                     ->numeric(),
+                TextEntry::make('tax_amount')
+                    ->money(),
                 TextEntry::make('net_price')
                     ->money(),
                 TextEntry::make('gross_price')

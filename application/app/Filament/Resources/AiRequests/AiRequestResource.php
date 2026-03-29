@@ -41,6 +41,12 @@ class AiRequestResource extends Resource
                     ->columnSpanFull(),
                 Textarea::make('response')
                     ->formatStateUsing(fn ($state) => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $state)
+                    ->dehydrateStateUsing(fn ($state) => is_string($state) ? json_decode($state, true) : $state)
+                    ->rule(fn (): \Closure => function (string $attribute, $value, \Closure $fail) {
+                        if (is_string($value) && ! json_validate($value)) {
+                            $fail('The :attribute must be a valid JSON string.');
+                        }
+                    })
                     ->columnSpanFull(),
             ]);
     }
@@ -81,6 +87,21 @@ class AiRequestResource extends Resource
                             ->success()
                             ->title('Analysis completed')
                             ->body('The AI response has been analyzed successfully.')
+                            ->send();
+                    }),
+                Action::make('reanalyze')
+                    ->label('Re-analyze Response')
+                    ->icon('heroicon-o-arrow-path')
+                    ->requiresConfirmation()
+                    ->visible(fn (AiRequest $record): bool => $record->response_status === 'completed' && $record->analyses()->exists())
+                    ->action(function (AiRequest $record) {
+                        $record->analyses()->delete();
+                        CreateAnalysisAction::execute($record->file, $record);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Analysis re-executed')
+                            ->body('The AI response has been re-analyzed successfully.')
                             ->send();
                     }),
                 ViewAction::make(),
