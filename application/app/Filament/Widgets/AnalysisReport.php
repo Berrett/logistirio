@@ -102,6 +102,7 @@ class AnalysisReport extends BaseWidget
                             $writer->openToFile('php://output');
 
                             $columns = AnalysisExporter::getColumns();
+                            $totals = array_fill_keys(array_map(fn ($column) => $column->getName(), $columns), 0);
 
                             $writer->addRow(Row::fromValues(array_map(
                                 fn ($column) => $column->getLabel(),
@@ -109,11 +110,37 @@ class AnalysisReport extends BaseWidget
                             )));
 
                             foreach ($records as $record) {
-                                $writer->addRow(Row::fromValues(array_map(
-                                    fn ($column) => $record->{$column->getName()},
-                                    $columns,
-                                )));
+                                $rowValues = [];
+                                foreach ($columns as $column) {
+                                    $columnName = $column->getName();
+                                    $value = $record->{$columnName};
+                                    $rowValues[] = $value;
+
+                                    if (in_array($columnName, [
+                                        'amount_6', 'vat_6', 'amount_13', 'vat_13', 'amount_24', 'vat_24',
+                                        'total_net_price', 'tax_amount_price', 'total_amount',
+                                    ])) {
+                                        $totals[$columnName] += (float) $value;
+                                    }
+                                }
+                                $writer->addRow(Row::fromValues($rowValues));
                             }
+
+                            $summaryRowValues = [];
+                            foreach ($columns as $column) {
+                                $columnName = $column->getName();
+                                if ($columnName === 'identifier') {
+                                    $summaryRowValues[] = 'ΣΥΝΟΛΟ';
+                                } elseif (isset($totals[$columnName]) && in_array($columnName, [
+                                    'amount_6', 'vat_6', 'amount_13', 'vat_13', 'amount_24', 'vat_24',
+                                    'total_net_price', 'tax_amount_price', 'total_amount',
+                                ])) {
+                                    $summaryRowValues[] = $totals[$columnName];
+                                } else {
+                                    $summaryRowValues[] = '';
+                                }
+                            }
+                            $writer->addRow(Row::fromValues($summaryRowValues));
 
                             $writer->close();
                         }, 'analysis-report-'.now()->format('Y-m-d').'.xlsx');
