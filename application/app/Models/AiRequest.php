@@ -20,6 +20,17 @@ class AiRequest extends Model
     ];
 
     /**
+     * A readable reason for a failed request: OpenAI's error message, or the stored text.
+     */
+    public function errorMessage(): string
+    {
+        $message = data_get($this->response, 'error.message')
+            ?? (is_string($this->response) ? $this->response : null);
+
+        return filled($message) ? $message : 'Unknown error.';
+    }
+
+    /**
      * Get the file associated with the AI request.
      */
     public function file()

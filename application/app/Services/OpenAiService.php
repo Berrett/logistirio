@@ -8,6 +8,7 @@ use App\Models\AiRequest;
 use App\Models\File;
 use Exception;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class OpenAiService
@@ -39,7 +40,8 @@ class OpenAiService
         if ($result) {
             $response = json_decode(str_replace(['\n', '\\', '"{', '}"'], ['', '', '{', '}'], $result['response']), true);
             $aiRequest->update([
-                'response' => $response,
+                // Keep the raw text (e.g. an exception message) when it isn't JSON, so the error isn't lost.
+                'response' => $response ?? $result['response'],
                 'response_status' => ($result['response_code'] ?? 0) == 200 ? 'completed' : 'failed',
             ]);
         } else {
@@ -126,6 +128,12 @@ Return the data as a JSON object with these exact keys and information.';
                 $content = $response->json()['choices'][0]['message']['content'] ?? '{}';
             } else {
                 $content = $response->body();
+
+                Log::warning('OpenAI receipt analysis failed', [
+                    'file' => $filePath,
+                    'status' => $response->status(),
+                    'error' => $response->json('error.message') ?? $content,
+                ]);
             }
 
             return [
@@ -134,6 +142,8 @@ Return the data as a JSON object with these exact keys and information.';
             ];
 
         } catch (Exception $e) {
+            Log::error('OpenAI receipt analysis request errored', ['file' => $filePath, 'exception' => $e]);
+
             return [
                 'response_code' => 422,
                 'response' => $e->getMessage(),

@@ -42,10 +42,13 @@ class FileResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
+            // Refresh while uploaded PDFs are still being converted to images.
+            ->poll(fn (): ?string => File::where('mime_type', 'application/pdf')->exists() ? '3s' : null)
             ->columns([
                 ImageColumn::make('path')
                     ->label('Preview')
                     ->disk('public')
+                    ->getStateUsing(fn (File $record): ?string => $record->isImage() ? $record->path : null)
                     ->square(),
                 TextColumn::make('path')
                     ->searchable(),
@@ -70,7 +73,7 @@ class FileResource extends Resource
                     ->icon('heroicon-o-eye')
                     ->schema(fn (File $record): array => [
                         Image::make($record->url, $record->filename)
-                            ->visible(str_starts_with($record->mime_type ?? '', 'image/'))
+                            ->visible($record->isImage())
                             ->imageHeight(500)
                             ->alignCenter(),
                         Text::make($record->filename),
@@ -87,25 +90,40 @@ class FileResource extends Resource
                 Action::make('analyze')
                     ->label('Analyze')
                     ->icon('heroicon-o-cpu-chip')
-                    ->visible(fn (File $record): bool => $record->analyses()->doesntExist())
+                    ->visible(fn (File $record): bool => $record->isImage() && $record->analyses()->doesntExist())
                     ->action(function (File $record, OpenAiService $service) {
                         $aiRequest = $service->analyzeImage($record);
+                        $response = $aiRequest->response;
 
-                        CreateAnalysisAction::execute($record, $aiRequest);
-
-                        if ($aiRequest->response_status == 'completed') {
-                            Notification::make()
-                                ->success()
-                                ->title('Analysis completed')
-                                ->body('The image has been analyzed successfully.')
-                                ->send();
-                        } else {
+                        if ($aiRequest->response_status !== 'completed') {
                             Notification::make()
                                 ->danger()
                                 ->title('Analysis failed')
-                                ->body('An error occurred during analysis.')
+                                ->body($aiRequest->errorMessage())
+                                ->persistent()
                                 ->send();
+
+                            return;
                         }
+
+                        // e.g. the second page of a multi-page PDF, which has no receipt header.
+                        if (blank(data_get($response, 'date')) || ! is_array(data_get($response, 'products'))) {
+                            Notification::make()
+                                ->warning()
+                                ->title('No receipt data found')
+                                ->body('The image does not contain a receipt date and products, so no analysis was created.')
+                                ->send();
+
+                            return;
+                        }
+
+                        CreateAnalysisAction::execute($record, $aiRequest);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Analysis completed')
+                            ->body('The image has been analyzed successfully.')
+                            ->send();
                     }),
                 DeleteAction::make(),
             ])
